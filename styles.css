@@ -1,0 +1,14 @@
+.ai-metadata-modal .tag-row {
+  display: flex;
+  align-items: center;
+  margin: 0.3em 0;
+}
+
+.ai-metadata-modal .tag-row label {
+  margin-left: 0.5em;
+  cursor: pointer;
+}
+
+.ai-metadata-modal .modal-button-row button {
+  padding: 0.4em 0.8em;
+}
