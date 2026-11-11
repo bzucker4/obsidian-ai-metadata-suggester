@@ -2,6 +2,8 @@
 
 Suggest tags, aliases, and a short summary for the current Obsidian note using an AI provider. Review the suggestions in a modal before anything is written to frontmatter.
 
+[![Sponsor](https://img.shields.io/badge/sponsor-30363D?style=for-the-badge&logo=GitHub-Sponsors&logoColor=%23EA4AAA)](https://github.com/sponsors/bzucker4)
+
 ## Features
 
 - Command + ribbon icon: **Suggest metadata for current note**
@@ -30,9 +32,9 @@ Note content (intelligently truncated) is sent to the API endpoint you configure
 
 ## Support
 
-If this plugin is useful to you, consider sponsoring the development on GitHub:
+If this plugin is useful to you, consider sponsoring development:
 
-[Sponsor on GitHub](https://github.com/sponsors/bzucker4)
+[![Sponsor](https://img.shields.io/badge/sponsor-30363D?style=for-the-badge&logo=GitHub-Sponsors&logoColor=%23EA4AAA)](https://github.com/sponsors/bzucker4)
 
 ## Development
 
