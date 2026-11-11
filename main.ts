@@ -9,6 +9,7 @@ import {
   Setting,
   TFile,
   normalizePath,
+  requestUrl,
 } from "obsidian";
 
 interface AIMetadataSuggesterSettings {
@@ -76,7 +77,7 @@ export default class AIMetadataSuggester extends Plugin {
       id: "suggest-metadata",
       name: "Suggest metadata for current note",
       editorCallback: (editor: Editor, view: MarkdownView) => {
-        this.suggestForActiveNote(view);
+        void this.suggestForActiveNote(view);
       },
     });
 
@@ -310,7 +311,8 @@ Empty arrays or empty string if nothing useful.`;
       body.response_format = { type: "json_object" };
     }
 
-    const response = await fetch(`${this.settings.baseUrl}/chat/completions`, {
+    const response = await requestUrl({
+      url: `${this.settings.baseUrl}/chat/completions`,
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -319,12 +321,11 @@ Empty arrays or empty string if nothing useful.`;
       body: JSON.stringify(body),
     });
 
-    if (!response.ok) {
-      const err = await response.text();
-      throw new Error(`API error ${response.status}: ${err.slice(0, 200)}`);
+    if (response.status !== 200) {
+      throw new Error(`API error ${response.status}: ${String(response.text).slice(0, 200)}`);
     }
 
-    const data = await response.json();
+    const data = response.json;
     const text = data.choices?.[0]?.message?.content || "{}";
     try {
       const cleaned = text.replace(/```json|```/g, "").trim();
@@ -403,11 +404,11 @@ class SuggestionModal extends Modal {
     const { contentEl } = this;
     contentEl.empty();
     contentEl.addClass("ai-metadata-modal");
-    contentEl.createEl("h2", { text: "Review AI suggestions" });
+    new Setting(contentEl).setName("Review AI suggestions").setHeading();
 
     // Tags with checkboxes
     if (this.result.tags.length) {
-      contentEl.createEl("h3", { text: "Tags" });
+      new Setting(contentEl).setName("Tags").setHeading();
       const tagContainer = contentEl.createDiv({ cls: "tag-suggestions" });
       this.tagChecks = this.result.tags.map((tag) => {
         const isNew = !this.existingTags.some((ex) => ex.toLowerCase() === tag.toLowerCase());
@@ -416,7 +417,7 @@ class SuggestionModal extends Modal {
         cb.checked = true;
         const label = row.createEl("label");
         label.textContent = tag + (isNew ? " (new)" : " (existing)");
-        if (isNew) label.style.color = "var(--text-accent)";
+        if (isNew) label.addClass("tag-new");
         label.prepend(cb);
         return { tag, isNew, selected: true };
       });
@@ -425,24 +426,21 @@ class SuggestionModal extends Modal {
     }
 
     if (this.result.aliases.length) {
-      contentEl.createEl("h3", { text: "Aliases" });
+      new Setting(contentEl).setName("Aliases").setHeading();
       this.aliasesEl = contentEl.createEl("input", { type: "text" });
-      this.aliasesEl.style.width = "100%";
+      this.aliasesEl.addClass("full-width");
       this.aliasesEl.value = this.result.aliases.join(", ");
     }
 
     if (this.result.summary) {
-      contentEl.createEl("h3", { text: "Summary" });
+      new Setting(contentEl).setName("Summary").setHeading();
       this.summaryEl = contentEl.createEl("textarea");
-      this.summaryEl.style.width = "100%";
-      this.summaryEl.style.minHeight = "80px";
+      this.summaryEl.addClass("summary-area");
       this.summaryEl.value = this.result.summary;
     }
 
     const buttonRow = contentEl.createDiv({ cls: "modal-button-row" });
-    buttonRow.style.marginTop = "1em";
-    buttonRow.style.display = "flex";
-    buttonRow.style.gap = "0.5em";
+
 
     const applyBtn = buttonRow.createEl("button", { text: "Apply" });
     applyBtn.onclick = async () => {
@@ -488,12 +486,12 @@ class BatchModal extends Modal {
 
   onOpen() {
     const { contentEl } = this;
-    contentEl.createEl("h2", { text: "Batch suggest metadata" });
+    new Setting(contentEl).setName("Batch suggest metadata").setHeading();
     contentEl.createEl("p", { text: "Enter a folder path (relative to vault root). All markdown notes in that folder (non-recursive) will be processed." });
 
     this.folderEl = contentEl.createEl("input", { type: "text", placeholder: "Inbox" });
-    this.folderEl.style.width = "100%";
-    this.folderEl.style.marginBottom = "1em";
+    this.folderEl.addClass("full-width");
+    this.folderEl.addClass("folder-input");
 
     const go = contentEl.createEl("button", { text: "Start" });
     go.onclick = async () => {
@@ -516,7 +514,7 @@ class BatchModal extends Modal {
       const ok = await this.plugin.suggestForFile(file, true);
       if (ok) success++;
       // simple delay to avoid rate limits
-      await new Promise((r) => setTimeout(r, 800));
+      await new Promise((r) => window.setTimeout(r, 800));
     }
     new Notice(`Batch complete. Opened review for ${success} notes.`);
   }
@@ -537,7 +535,7 @@ class AIMetadataSuggesterSettingTab extends PluginSettingTab {
   display(): void {
     const { containerEl } = this;
     containerEl.empty();
-    containerEl.createEl("h2", { text: "AI Metadata Suggester" });
+    new Setting(containerEl).setName("AI Metadata Suggester").setHeading();
 
     // Presets
     new Setting(containerEl)
@@ -611,8 +609,7 @@ class AIMetadataSuggesterSettingTab extends PluginSettingTab {
         slider
           .setLimits(0, 1, 0.1)
           .setValue(this.plugin.settings.temperature)
-          .setDynamicTooltip()
-          .onChange(async (value) => {
+                    .onChange(async (value) => {
             this.plugin.settings.temperature = value;
             await this.plugin.saveSettings();
           })
@@ -624,7 +621,8 @@ class AIMetadataSuggesterSettingTab extends PluginSettingTab {
       .addButton((btn) =>
         btn.setButtonText("Test").onClick(async () => {
           try {
-            const res = await fetch(`${this.plugin.settings.baseUrl}/chat/completions`, {
+            const res = await requestUrl({
+              url: `${this.plugin.settings.baseUrl}/chat/completions`,
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
@@ -636,7 +634,7 @@ class AIMetadataSuggesterSettingTab extends PluginSettingTab {
                 max_tokens: 5,
               }),
             });
-            if (res.ok) new Notice("Connection successful");
+            if (res.status === 200) new Notice("Connection successful");
             else new Notice("Connection failed: " + res.status);
           } catch (e) {
             new Notice("Connection error: " + (e as Error).message);
@@ -671,8 +669,7 @@ class AIMetadataSuggesterSettingTab extends PluginSettingTab {
         s
           .setLimits(1, 12, 1)
           .setValue(this.plugin.settings.maxTags)
-          .setDynamicTooltip()
-          .onChange(async (v) => {
+                    .onChange(async (v) => {
             this.plugin.settings.maxTags = v;
             await this.plugin.saveSettings();
           })
@@ -752,8 +749,7 @@ class AIMetadataSuggesterSettingTab extends PluginSettingTab {
         s
           .setLimits(2000, 12000, 500)
           .setValue(this.plugin.settings.maxContentLength)
-          .setDynamicTooltip()
-          .onChange(async (v) => {
+                    .onChange(async (v) => {
             this.plugin.settings.maxContentLength = v;
             await this.plugin.saveSettings();
           })

@@ -9,6 +9,25 @@
   cursor: pointer;
 }
 
+.ai-metadata-modal .tag-new {
+  color: var(--text-accent);
+}
+
+.ai-metadata-modal .full-width {
+  width: 100%;
+}
+
+.ai-metadata-modal .summary-area {
+  width: 100%;
+  min-height: 80px;
+}
+
+.ai-metadata-modal .modal-button-row {
+  margin-top: 1em;
+  display: flex;
+  gap: 0.5em;
+}
+
 .ai-metadata-modal .modal-button-row button {
   padding: 0.4em 0.8em;
-}
+}.ai-metadata-modal .folder-input { margin-bottom: 1em; }
