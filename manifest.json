@@ -6,5 +6,6 @@
   "description": "Suggest tags, aliases, and summary metadata for notes using AI, with review before applying.",
   "author": "Atlas Creative",
   "authorUrl": "https://github.com/bzucker4",
+  "fundingUrl": "https://github.com/sponsors/bzucker4",
   "isDesktopOnly": false
 }
