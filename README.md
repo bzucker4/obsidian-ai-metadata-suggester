@@ -28,6 +28,12 @@ Suggest tags, aliases, and a short summary for the current Obsidian note using a
 
 Note content (intelligently truncated) is sent to the API endpoint you configure. Use a local model (Ollama preset) for full privacy.
 
+## Support
+
+If this plugin is useful to you, consider sponsoring the development on GitHub:
+
+[Sponsor on GitHub](https://github.com/sponsors/bzucker4)
+
 ## Development
 
 ```bash
