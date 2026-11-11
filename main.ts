@@ -173,7 +173,7 @@ export default class AIMetadataSuggester extends Plugin {
     return match ? content.slice(match[0].length) : content;
   }
 
-  getExistingFrontmatter(file: TFile): Record<string, any> {
+  getExistingFrontmatter(file: TFile): Record<string, unknown> {
     const cache = this.app.metadataCache.getFileCache(file);
     return cache?.frontmatter || {};
   }
@@ -220,7 +220,7 @@ export default class AIMetadataSuggester extends Plugin {
     body: string,
     title: string,
     existingTags: string[],
-    existingFm: Record<string, any>
+    existingFm: Record<string, unknown>
   ): Promise<SuggestionResult> {
     const tagList = existingTags.slice(0, 150).join(", ");
     const fmSummary = Object.keys(existingFm).length
@@ -280,7 +280,7 @@ Empty arrays or empty string if nothing useful.`;
       throw new Error("AI returned invalid JSON after retry");
     }
 
-    let tags = Array.isArray(parsed.tags) ? parsed.tags.map((t: any) => String(t).trim()).filter(Boolean) : [];
+    let tags = Array.isArray(parsed.tags) ? parsed.tags.map((t: unknown) => String(t).trim()).filter(Boolean) : [];
     tags = tags.slice(0, this.settings.maxTags);
 
     // Fuzzy match to existing
@@ -294,14 +294,14 @@ Empty arrays or empty string if nothing useful.`;
     return {
       tags,
       aliases: Array.isArray(parsed.aliases)
-        ? parsed.aliases.map((a: any) => String(a).trim()).filter(Boolean)
+        ? parsed.aliases.map((a: unknown) => String(a).trim()).filter(Boolean)
         : [],
       summary: typeof parsed.summary === "string" ? parsed.summary.trim() : "",
     };
   }
 
-  private async tryCallAI(messages: any[]): Promise<SuggestionResult | null> {
-    const body: any = {
+  private async tryCallAI(messages: Array<{role: string; content: string}>): Promise<SuggestionResult | null> {
+    const body: Record<string, unknown> = {
       model: this.settings.model,
       messages,
       temperature: this.settings.temperature,
@@ -535,33 +535,31 @@ class AIMetadataSuggesterSettingTab extends PluginSettingTab {
   display(): void {
     const { containerEl } = this;
     containerEl.empty();
-    new Setting(containerEl).setName("AI Metadata Suggester").setHeading();
-
     // Presets
     new Setting(containerEl)
       .setName("Quick presets")
       .setDesc("Fill common endpoints")
       .addButton((btn) =>
-        btn.setButtonText("OpenAI").onClick(() => {
+        btn.setButtonText("OpenAI").onClick(async () => {
           this.plugin.settings.baseUrl = "https://api.openai.com/v1";
           this.plugin.settings.model = "gpt-4o-mini";
-          this.plugin.saveSettings();
+          await this.plugin.saveSettings();
           this.display();
         })
       )
       .addButton((btn) =>
-        btn.setButtonText("Ollama").onClick(() => {
+        btn.setButtonText("Ollama").onClick(async () => {
           this.plugin.settings.baseUrl = "http://localhost:11434/v1";
           this.plugin.settings.model = "llama3";
-          this.plugin.saveSettings();
+          await this.plugin.saveSettings();
           this.display();
         })
       )
       .addButton((btn) =>
-        btn.setButtonText("OpenRouter").onClick(() => {
+        btn.setButtonText("OpenRouter").onClick(async () => {
           this.plugin.settings.baseUrl = "https://openrouter.ai/api/v1";
           this.plugin.settings.model = "openai/gpt-4o-mini";
-          this.plugin.saveSettings();
+          await this.plugin.saveSettings();
           this.display();
         })
       );
@@ -727,8 +725,8 @@ class AIMetadataSuggesterSettingTab extends PluginSettingTab {
           .addOption("replace", "Replace")
           .addOption("skip-if-exists", "Skip if exists")
           .setValue(this.plugin.settings.summaryMode)
-          .onChange(async (v: any) => {
-            this.plugin.settings.summaryMode = v;
+          .onChange(async (v: string) => {
+            this.plugin.settings.summaryMode = v as "replace" | "skip-if-exists";
             await this.plugin.saveSettings();
           })
       );
