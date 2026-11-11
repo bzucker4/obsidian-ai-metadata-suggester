@@ -58,6 +58,14 @@ interface SuggestionResult {
   summary: string;
 }
 
+interface AIResponse {
+  choices?: Array<{
+    message?: {
+      content?: string;
+    };
+  }>;
+}
+
 interface TagSuggestion {
   tag: string;
   isNew: boolean;
@@ -325,18 +333,19 @@ Empty arrays or empty string if nothing useful.`;
       throw new Error(`API error ${response.status}: ${String(response.text).slice(0, 200)}`);
     }
 
-    const data = response.json;
+    const data = response.json as AIResponse;
     const text = data.choices?.[0]?.message?.content || "{}";
     try {
       const cleaned = text.replace(/```json|```/g, "").trim();
-      return JSON.parse(cleaned);
+      const parsed = JSON.parse(cleaned) as SuggestionResult;
+      return parsed;
     } catch {
       return null;
     }
   }
 
   async applySuggestions(file: TFile, result: SuggestionResult) {
-    await this.app.fileManager.processFrontMatter(file, (fm) => {
+    await this.app.fileManager.processFrontMatter(file, (fm: Record<string, unknown>) => {
       if (this.settings.suggestTags && result.tags.length > 0) {
         if (this.settings.tagMode === "replace") {
           fm.tags = result.tags;
@@ -404,11 +413,11 @@ class SuggestionModal extends Modal {
     const { contentEl } = this;
     contentEl.empty();
     contentEl.addClass("ai-metadata-modal");
-    new Setting(contentEl).setName("Review AI suggestions").setHeading();
+    contentEl.createEl("h2", { text: "Review AI suggestions", cls: "modal-title" });
 
     // Tags with checkboxes
     if (this.result.tags.length) {
-      new Setting(contentEl).setName("Tags").setHeading();
+      contentEl.createEl("h3", { text: "Tags", cls: "modal-section" });
       const tagContainer = contentEl.createDiv({ cls: "tag-suggestions" });
       this.tagChecks = this.result.tags.map((tag) => {
         const isNew = !this.existingTags.some((ex) => ex.toLowerCase() === tag.toLowerCase());
@@ -426,14 +435,14 @@ class SuggestionModal extends Modal {
     }
 
     if (this.result.aliases.length) {
-      new Setting(contentEl).setName("Aliases").setHeading();
+      contentEl.createEl("h3", { text: "Aliases", cls: "modal-section" });
       this.aliasesEl = contentEl.createEl("input", { type: "text" });
       this.aliasesEl.addClass("full-width");
       this.aliasesEl.value = this.result.aliases.join(", ");
     }
 
     if (this.result.summary) {
-      new Setting(contentEl).setName("Summary").setHeading();
+      contentEl.createEl("h3", { text: "Summary", cls: "modal-section" });
       this.summaryEl = contentEl.createEl("textarea");
       this.summaryEl.addClass("summary-area");
       this.summaryEl.value = this.result.summary;
@@ -486,7 +495,7 @@ class BatchModal extends Modal {
 
   onOpen() {
     const { contentEl } = this;
-    new Setting(contentEl).setName("Batch suggest metadata").setHeading();
+    contentEl.createEl("h2", { text: "Batch suggest metadata", cls: "modal-title" });
     contentEl.createEl("p", { text: "Enter a folder path (relative to vault root). All markdown notes in that folder (non-recursive) will be processed." });
 
     this.folderEl = contentEl.createEl("input", { type: "text", placeholder: "Inbox" });
